@@ -1,0 +1,212 @@
+---
+title: "SEP-10: Authentication"
+description: Stellar cüzdanıyla kimlik doğrulama - challenge-response akışı
+---
+
+# SEP-10: Web Authentication
+
+SEP-10, Stellar'da **cüzdanla kimlik doğrulama** standardıdır. Şifre yok, API key yok  - kullanıcının **cüzdan anahtarı** kimliği.
+
+## Akış
+
+```
+1. Client -> Anchor: "Ben G... adresiyim, giriş yapmak istiyorum"
+2. Anchor -> Client: "Bu challenge transaction'ı imzala"
+3. Client: Challenge'ı secret key ile imzalar
+4. Client -> Anchor: "İmzalı transaction burada"
+5. Anchor -> Client: "Doğru, al sana JWT token"
+```
+
+## Adım 1: Challenge İste
+
+`WEB_AUTH_ENDPOINT`'e (stellar.toml'dan aldın) GET isteği gönder:
+
+### JavaScript
+
+```js
+import { StellarTomlResolver } from '@stellar/stellar-sdk';
+
+const toml = await StellarTomlResolver.resolve('tr-mock-anchor.fly.dev');
+const authUrl = toml.WEB_AUTH_ENDPOINT;
+
+// Challenge iste
+const response = await fetch(
+  `${authUrl}?account=${publicKey}`
+);
+const { transaction, network_passphrase } = await response.json();
+
+console.log('Challenge TX:', transaction);
+// transaction bir XDR-encoded transaction'dir
+```
+
+### Python
+
+```python
+from stellar_sdk import StellarTomlResolver
+import requests
+
+toml = StellarTomlResolver.resolve("tr-mock-anchor.fly.dev")
+auth_url = toml["WEB_AUTH_ENDPOINT"]
+
+# Challenge iste
+response = requests.get(
+    auth_url,
+    params={"account": public_key}
+)
+data = response.json()
+
+challenge_tx = data["transaction"]
+network_passphrase = data["network_passphrase"]
+print("Challenge TX:", challenge_tx)
+```
+
+## Adım 2: Challenge'ı İmzala
+
+Anchor'dan gelen challenge transaction'ını kullanıcının secret key'i ile imzala:
+
+### JavaScript
+
+```js
+import {
+  TransactionBuilder,
+  Keypair,
+  Networks,
+} from '@stellar/stellar-sdk';
+
+// Challenge transaction'i decode et
+const tx = TransactionBuilder.fromXDR(
+  transaction,
+  Networks.TESTNET
+);
+
+// Kullanicinin keypair'i ile imzala
+const keypair = Keypair.fromSecret(secretKey);
+tx.sign(keypair);
+
+// Imzali XDR'i al
+const signedXDR = tx.toXDR();
+```
+
+### Python
+
+```python
+from stellar_sdk import (
+    TransactionBuilder,
+    Keypair,
+    Network,
+)
+
+# Challenge transaction'i decode et
+tx = TransactionBuilder.from_xdr(
+    challenge_tx,
+    network_passphrase=Network.TESTNET_NETWORK_PASSPHRASE
+)
+
+# Kullanicinin keypair'i ile imzala
+keypair = Keypair.from_secret(secret_key)
+tx.sign(keypair)
+
+# Imzali XDR'i al
+signed_xdr = tx.to_xdr()
+```
+
+## Adım 3: Token Al
+
+İmzalı transaction'ı anchor'a geri gönder ve JWT token al:
+
+### JavaScript
+
+```js
+const tokenResponse = await fetch(authUrl, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ transaction: signedXDR }),
+});
+
+const { token } = await tokenResponse.json();
+console.log('JWT Token:', token);
+
+// Bu token'i sonraki tum isteklerde kullanacaksin:
+// Authorization: Bearer <token>
+```
+
+### Python
+
+```python
+token_response = requests.post(
+    auth_url,
+    json={"transaction": signed_xdr}
+)
+
+token = token_response.json()["token"]
+print("JWT Token:", token)
+
+# Bu token'i sonraki tum isteklerde kullanacaksin:
+# headers = {"Authorization": f"Bearer {token}"}
+```
+
+## Tam Akış (JavaScript)
+
+```js
+import {
+  StellarTomlResolver,
+  TransactionBuilder,
+  Keypair,
+  Networks,
+} from '@stellar/stellar-sdk';
+
+async function authenticate(domain, secretKey) {
+  const keypair = Keypair.fromSecret(secretKey);
+  const publicKey = keypair.publicKey();
+
+  // 1. TOML'dan auth endpoint'i al
+  const toml = await StellarTomlResolver.resolve(domain);
+  const authUrl = toml.WEB_AUTH_ENDPOINT;
+
+  // 2. Challenge iste
+  const challengeRes = await fetch(
+    `${authUrl}?account=${publicKey}`
+  );
+  const { transaction } = await challengeRes.json();
+
+  // 3. Imzala
+  const tx = TransactionBuilder.fromXDR(
+    transaction,
+    Networks.TESTNET
+  );
+  tx.sign(keypair);
+
+  // 4. Token al
+  const tokenRes = await fetch(authUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      transaction: tx.toXDR(),
+    }),
+  });
+  const { token } = await tokenRes.json();
+
+  return token;
+}
+
+// Kullanim
+const token = await authenticate(
+  'tr-mock-anchor.fly.dev',
+  'S...' // secret key
+);
+console.log('Giris basarili! Token:', token);
+```
+
+## Önemli Notlar
+
+- JWT token'ın bir **süresi** vardır. Süre dolunca yeniden auth yapman gerekir.
+- Challenge transaction'da anchor'ın **SIGNING_KEY**'i ile imzalı bir operation vardır  - bunu doğrulayarak sahte anchor'lara karşı korunabilirsin.
+- **Frontend'de secret key tutma!** Gerçek uygulamada imzalama Freighter gibi bir cüzdan üzerinden yapılır.
+
+## Sonraki Adım
+
+Token'ın var. Şimdi KYC adımına geçelim.
+
+<Cards>
+  <Card title="SEP-12: KYC" href="/docs/entegrasyon/sep-12" />
+</Cards>
