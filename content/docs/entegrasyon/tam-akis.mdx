@@ -1,0 +1,299 @@
+---
+title: Uçtan Uca Tam Akış
+description: TOML'dan deposit'e kadar tüm adımları birleştiren tam örnek
+---
+
+# Uçtan Uca Tam Akış
+
+Bu sayfada tüm SEP adımlarını birleştiren **tek bir script** göreceksin. Kopyala, secret key'ini koy, çalıştır.
+
+## JavaScript - Tam Örnek
+
+```js
+import {
+  StellarTomlResolver,
+  TransactionBuilder,
+  Keypair,
+  Networks,
+  Server,
+  Operation,
+  Asset,
+} from '@stellar/stellar-sdk';
+
+// ---- AYARLAR ----
+const DOMAIN = 'tr-mock-anchor.fly.dev';
+const SECRET_KEY = 'S...'; // Testnet secret key'in
+const keypair = Keypair.fromSecret(SECRET_KEY);
+const PUBLIC_KEY = keypair.publicKey();
+
+async function main() {
+  console.log('=== Stellar Anchor Entegrasyonu ===\n');
+
+  // ---- ADIM 1: TOML Kesfet (SEP-1) ----
+  console.log('1. stellar.toml okunuyor...');
+  const toml = await StellarTomlResolver.resolve(DOMAIN);
+  console.log('   Auth:', toml.WEB_AUTH_ENDPOINT);
+  console.log('   Transfer:', toml.TRANSFER_SERVER);
+  console.log('   Quote:', toml.ANCHOR_QUOTE_SERVER);
+  console.log('');
+
+  // ---- ADIM 2: Auth (SEP-10) ----
+  console.log('2. Kimlik dogrulaniyor (SEP-10)...');
+  const challengeRes = await fetch(
+    `${toml.WEB_AUTH_ENDPOINT}?account=${PUBLIC_KEY}`
+  );
+  const { transaction } = await challengeRes.json();
+
+  const tx = TransactionBuilder.fromXDR(transaction, Networks.TESTNET);
+  tx.sign(keypair);
+
+  const tokenRes = await fetch(toml.WEB_AUTH_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ transaction: tx.toXDR() }),
+  });
+  const { token } = await tokenRes.json();
+  console.log('   JWT Token alindi\n');
+
+  const headers = { Authorization: `Bearer ${token}` };
+
+  // ---- ADIM 3: KYC (SEP-12) ----
+  // Mock'ta otomatik onay, ekstra islem gerekmez
+  console.log('3. KYC otomatik onaylandi (mock)\n');
+
+  // ---- ADIM 4: Quote (SEP-38) ----
+  console.log('4. Fiyat teklifi aliniyor (SEP-38)...');
+  const quoteRes = await fetch(`${toml.ANCHOR_QUOTE_SERVER}/quote`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sell_asset: 'iso4217:TRY',
+      buy_asset: `stellar:USDC:${toml.CURRENCIES[0].issuer}`,
+      sell_amount: '100',
+    }),
+  });
+  const quote = await quoteRes.json();
+  console.log('   100 TRY =', quote.buy_amount, 'USDC');
+  console.log('   Quote ID:', quote.id, '\n');
+
+  // ---- ADIM 5: USDC Trustline (yoksa ac) ----
+  console.log('5. USDC trustline kontrol ediliyor...');
+  const server = new Server('https://horizon-testnet.stellar.org');
+  const USDC = new Asset('USDC', toml.CURRENCIES[0].issuer);
+
+  try {
+    const acc = await server.loadAccount(PUBLIC_KEY);
+    const hasTrustline = acc.balances.some(
+      (b) => b.asset_code === 'USDC' && b.asset_issuer === toml.CURRENCIES[0].issuer
+    );
+    if (!hasTrustline) {
+      const trustTx = new TransactionBuilder(acc, {
+        fee: '100',
+        networkPassphrase: Networks.TESTNET,
+      })
+        .addOperation(Operation.changeTrust({ asset: USDC }))
+        .setTimeout(30)
+        .build();
+      trustTx.sign(keypair);
+      await server.submitTransaction(trustTx);
+      console.log('   Trustline acildi\n');
+    } else {
+      console.log('   Trustline zaten acik\n');
+    }
+  } catch (e) {
+    console.log('   Hesap bulunamadi, once Friendbot ile fonlayin\n');
+    return;
+  }
+
+  // ---- ADIM 6: Deposit (SEP-6) ----
+  console.log('6. Deposit baslatiliyor (SEP-6)...');
+  const depositRes = await fetch(
+    `${toml.TRANSFER_SERVER}/deposit?` +
+    new URLSearchParams({
+      asset_code: 'USDC',
+      account: PUBLIC_KEY,
+      amount: '100',
+    }),
+    { headers }
+  );
+  const deposit = await depositRes.json();
+  console.log('   Islem ID:', deposit.id);
+  console.log('   Banka talimatlari:', deposit.how, '\n');
+
+  // ---- ADIM 7: Banka Transferini Simule Et ----
+  console.log('7. Banka transferi simule ediliyor...');
+  await fetch(
+    `${toml.TRANSFER_SERVER}/tx/${deposit.id}/simulate-bank-transfer`,
+    {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: '100' }),
+    }
+  );
+  console.log('   Simule edildi\n');
+
+  // ---- ADIM 8: Durum Kontrol ----
+  console.log('8. Islem durumu kontrol ediliyor...');
+  // Biraz bekle, sonra kontrol et
+  await new Promise((r) => setTimeout(r, 3000));
+  const statusRes = await fetch(
+    `${toml.TRANSFER_SERVER}/transaction?id=${deposit.id}`,
+    { headers }
+  );
+  const status = await statusRes.json();
+  console.log('   Durum:', status.transaction.status);
+  console.log('');
+
+  console.log('=== TAMAMLANDI ===');
+}
+
+main().catch(console.error);
+```
+
+## Python - Tam Örnek
+
+```python
+from stellar_sdk import (
+    StellarTomlResolver,
+    TransactionBuilder,
+    Keypair,
+    Network,
+    Server,
+    Asset,
+)
+import requests
+import time
+
+# ---- AYARLAR ----
+DOMAIN = "tr-mock-anchor.fly.dev"
+SECRET_KEY = "S..."  # Testnet secret key'in
+keypair = Keypair.from_secret(SECRET_KEY)
+PUBLIC_KEY = keypair.public_key
+
+def main():
+    print("=== Stellar Anchor Entegrasyonu ===\n")
+
+    # ---- ADIM 1: TOML (SEP-1) ----
+    print("1. stellar.toml okunuyor...")
+    toml = StellarTomlResolver.resolve(DOMAIN)
+    auth_url = toml["WEB_AUTH_ENDPOINT"]
+    transfer_url = toml["TRANSFER_SERVER"]
+    quote_url = toml["ANCHOR_QUOTE_SERVER"]
+    issuer = toml["CURRENCIES"][0]["issuer"]
+    print(f"   Transfer: {transfer_url}\n")
+
+    # ---- ADIM 2: Auth (SEP-10) ----
+    print("2. Kimlik dogrulaniyor (SEP-10)...")
+    challenge = requests.get(
+        auth_url, params={"account": PUBLIC_KEY}
+    ).json()
+
+    tx = TransactionBuilder.from_xdr(
+        challenge["transaction"],
+        network_passphrase=Network.TESTNET_NETWORK_PASSPHRASE
+    )
+    tx.sign(keypair)
+
+    token = requests.post(
+        auth_url, json={"transaction": tx.to_xdr()}
+    ).json()["token"]
+    print("   JWT Token alindi\n")
+
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # ---- ADIM 3: KYC ----
+    print("3. KYC otomatik onaylandi (mock)\n")
+
+    # ---- ADIM 4: Quote (SEP-38) ----
+    print("4. Fiyat teklifi aliniyor (SEP-38)...")
+    quote = requests.post(
+        f"{quote_url}/quote",
+        headers={**headers, "Content-Type": "application/json"},
+        json={
+            "sell_asset": "iso4217:TRY",
+            "buy_asset": f"stellar:USDC:{issuer}",
+            "sell_amount": "100"
+        }
+    ).json()
+    print(f"   100 TRY = {quote['buy_amount']} USDC")
+    print(f"   Quote ID: {quote['id']}\n")
+
+    # ---- ADIM 5: Deposit (SEP-6) ----
+    print("5. Deposit baslatiliyor (SEP-6)...")
+    deposit = requests.get(
+        f"{transfer_url}/deposit",
+        params={
+            "asset_code": "USDC",
+            "account": PUBLIC_KEY,
+            "amount": "100",
+        },
+        headers=headers
+    ).json()
+    print(f"   Islem ID: {deposit['id']}")
+    print(f"   Banka talimatlari: {deposit.get('how', 'N/A')}\n")
+
+    # ---- ADIM 6: Banka Simule ----
+    print("6. Banka transferi simule ediliyor...")
+    requests.post(
+        f"{transfer_url}/tx/{deposit['id']}/simulate-bank-transfer",
+        headers={**headers, "Content-Type": "application/json"},
+        json={"amount": "100"}
+    )
+    print("   Simule edildi\n")
+
+    # ---- ADIM 7: Durum Kontrol ----
+    print("7. Islem durumu kontrol ediliyor...")
+    time.sleep(3)
+    status = requests.get(
+        f"{transfer_url}/transaction",
+        params={"id": deposit["id"]},
+        headers=headers
+    ).json()
+    print(f"   Durum: {status['transaction']['status']}\n")
+
+    print("=== TAMAMLANDI ===")
+
+if __name__ == "__main__":
+    main()
+```
+
+## Akış Diyagramı
+
+```
+  stellar.toml oku        Auth (JWT al)          KYC (otomatik)
+  +-----------+          +-----------+          +-----------+
+  |  SEP-1    |  ------> |  SEP-10   |  ------> |  SEP-12   |
+  +-----------+          +-----------+          +-----------+
+                                                      |
+                                                      v
+  Durum kontrol        Banka simüle et         Quote al
+  +-----------+        +-----------+          +-----------+
+  |  Poll     | <----- | Simulate  | <------- |  SEP-38   |
+  +-----------+        +-----------+          +-----------+
+       |                     ^
+       v                     |
+  +-----------+        +-----------+
+  | completed |        |  SEP-6    |
+  +-----------+        | Deposit   |
+                       +-----------+
+```
+
+## Hata Ayıklama
+
+| Sorun | Sebep | Çözüm |
+|---|---|---|
+| 401 Unauthorized | JWT token süresi dolmuş | SEP-10'u tekrar yap |
+| `pending_trust` takıldı | USDC trustline yok | `changeTrust` çalıştır |
+| Deposit tamamlanmıyor | Banka transferi simüle edilmedi | `POST /sep6/tx/{id}/simulate-bank-transfer` |
+| "Amount below minimum" | 50 TRY altında | Minimum 50 TRY |
+| "Amount above maximum" | 3000 TRY üstü | Maksimum 3000 TRY |
+| Withdraw tamamlanmıyor | Memo eksik/yanlış | `Memo.id(withdraw.memo)` kullan |
+
+## Sonraki Adım
+
+Temel entegrasyonu başardın! Pro seviyeye geçip Wallet SDK ve smart contract kompozisyonunu öğrenebilirsin.
+
+<Cards>
+  <Card title="Wallet SDK" href="/docs/pro/wallet-sdk" />
+  <Card title="Smart Contract + Anchor" href="/docs/pro/smart-contract-kompozisyon" />
+</Cards>
