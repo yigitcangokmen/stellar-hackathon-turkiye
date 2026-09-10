@@ -1,0 +1,36 @@
+---
+title: Aquarius
+description: Stellar DEX likidite ve swap routing - Aquarius entegrasyon rehberi
+---
+
+# Aquarius
+
+**Aquarius**, Stellar DEX üzerinde **likidite yönetimi ve swap routing** sağlayan bir protokoldür.
+
+## Ne Yapar?
+
+- Stellar DEX piyasalarına likidite teşvik (reward) dağıtır
+- Swap işlemleri için en iyi fiyatı bulur
+- Oy mekanizması ile hangi piyasaların teşvik alacağını belirler
+
+## Temel Özellikler
+
+| Özellik | Açıklama |
+|---|---|
+| **Liquidity Voting** | Topluluk hangi asset çiftlerinin likidite ödülleri alacağına oy verir |
+| **Swap Routing** | En iyi fiyat için birden fazla DEX havuzunu tarar |
+| **Reward Distribution** | Likidite sağlayıcılarına AQUA token dağıtır |
+
+## Anchor ile Kompozisyon
+
+```
+1. Kullanici TRY yatirir (Anchor SEP-6)
+2. USDC alir
+3. Aquarius swap routing ile USDC -> baska asset
+4. Veya Aquarius likidite havuzuna ekler (LP oduller kazanir)
+```
+
+## Kaynaklar
+
+- [Aquarius Docs](https://docs.aqua.network)
+- [Discord](https://discord.gg/aquarius)

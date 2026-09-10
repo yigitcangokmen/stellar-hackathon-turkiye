@@ -1,0 +1,45 @@
+---
+title: Blend v2
+description: Lending pool protokolu - Blend entegrasyon rehberi
+---
+
+# Blend v2
+
+**Blend**, Stellar üzerinde **lending pool (borç verme/alma) protokolüdür.** Kullanıcılar varlıklarını havuza koyarak faiz kazanabilir veya teminat karşılığı borç alabilir.
+
+## Ne Yapar?
+
+- Kullanıcılar asset'lerini havuza yatırır (lending) ve faiz kazanır
+- Borçalanlar teminat koyarak likidite çekerler
+- Farklı risk profillerinde havuzlar
+
+## Temel Kavramlar
+
+| Kavram | Açıklama |
+|---|---|
+| **Supply** | Havuza asset yatırma (faiz kazan) |
+| **Borrow** | Teminat koyarak borç alma |
+| **Collateral** | Borç için teminat olarak kilitlenen asset |
+| **Liquidation** | Teminat değeri düşerse pozisyon tasfiye edilir |
+
+## Anchor ile Kompozisyon
+
+```
+1. Kullanici TRY yatirir (Anchor SEP-6)
+2. USDC hesabina gelir
+3. USDC'yi Blend havuzuna supply eder -> faiz kazanir
+4. Veya USDC teminat koyar -> baska asset borc alir
+5. Cekildiginde Anchor ile TRY'ye cevrilir
+```
+
+## Örnek Senaryo: Mikro Kredi
+
+```
+Kullanici A: TRY yatirir -> USDC alir -> Blend'e supply eder (faiz kazanir)
+Kullanici B: USDC teminat koyar -> XLM borc alir -> Islem yapar
+```
+
+## Kaynaklar
+
+- [Blend Docs](https://docs.blend.capital)
+- [Discord](https://discord.gg/blend)

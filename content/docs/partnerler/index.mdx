@@ -1,0 +1,53 @@
+---
+title: Entegrasyon Partnerleri
+description: Hackathon'da kullanilabilecek Stellar ekosistem protokolleri
+---
+
+# Entegrasyon Partnerleri
+
+Hackathon'un gereksinimlerinden biri, aşağıdaki listeden (veya SCF Integration List'ten) bir protokole bağlanmak. Anchor entegrasyonu ile birlikte bu protokollerden birini kullanmak projenizi güçlendirir.
+
+## Protokol Tablosu
+
+| Kategori | Protokol | Ne Yapar |
+|---|---|---|
+| **DeFi - Yield** | [DeFindex](/docs/partnerler/defindex) | Vault aggregator / yield altyapısı |
+| **DeFi - Lending** | [Blend v2](/docs/partnerler/blend) | Lending pool protokolü |
+| **DeFi - DEX/Swap** | [Aquarius](/docs/partnerler/aquarius) | Stellar DEX likidite & swap routing |
+| **DeFi - DEX/Swap** | [Soroswap](/docs/partnerler/soroswap) | Soroban + classic likidite aggregator |
+| **DeFi - DEX/Swap** | Stellar Broker | Çok kaynaklı swap router |
+| **Cross-chain** | Circle CCTP | Zincirler arası 1:1 native USDC transferi |
+| **Cross-chain** | Near Intents | Çok zincirli intent routing |
+| **Cross-chain** | Allbridge | Native stablecoin bridge (EVM / non-EVM) |
+| **Wallets** | Stellar Wallets Kit | Stellar cüzdanlarını bağlama toolkit'i |
+| **Wallets** | Privy | Gömülü email/social cüzdan onboarding |
+| **Wallets** | DFNS | Wallets-as-a-Service (WaaS) |
+| **On/Off-ramp** | Bridge | Çok para birimli ödeme / treasury settlement |
+| **On/Off-ramp** | BlindPay | Global ödeme, fiat + stablecoin |
+
+> Liste bağlayıcı değil - SCF Integration List'teki **her** protokol geçerli.
+
+## Hangi Protokolü Seçmeliyim?
+
+Fikrine göre:
+
+- **Tasarruf / yatırım uygulaması** -> DeFindex + Anchor
+- **Borsa / swap** -> Soroswap veya Aquarius + Anchor
+- **Borç verme / alma** -> Blend + Anchor
+- **Çok zincirli uygulama** -> Circle CCTP veya Allbridge + Anchor
+- **Kolay cüzdan deneyimi** -> Privy veya DFNS + Anchor
+- **Ödeme uygulaması** -> Bridge veya BlindPay + Anchor
+
+## Entegrasyon + Anchor Kompozisyonu
+
+En güçlü projeler **Anchor + Protokol** birleştirir:
+
+```
+Kullanici -> TRY yatirir (Anchor)
+          -> USDC alir
+          -> USDC ile swap yapar (Soroswap)
+          -> Veya yield'e koyar (DeFindex)
+          -> Veya borc verir (Blend)
+```
+
+Bu, jürilerin "core feature" diye aradığı şey.

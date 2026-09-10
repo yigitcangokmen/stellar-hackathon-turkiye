@@ -1,0 +1,46 @@
+---
+title: DeFindex
+description: Yield infrastructure ve vault aggregator - DeFindex entegrasyon rehberi
+---
+
+# DeFindex
+
+**DeFindex**, Stellar üzerinde **vault aggregator ve yield altyapısı** sunar. Kullanıcıların varlıklarını yönetilen vault'lara yatırmasını ve getiri kazanmasını sağlar.
+
+## Ne Yapar?
+
+- Birden fazla DeFi stratejisini birleştiren vault'lar
+- Otomatik rebalancing
+- Kullanıcılar için basit yatır/çek arayüzü
+
+## Hızlı Başlangıç
+
+```bash
+npm install @defindex/sdk
+```
+
+### Temel Kullanım
+
+```js
+// DeFindex SDK ile vault'a yatirma ornegi
+// Detaylar icin resmi SDK dokumantasyonuna bakin
+```
+
+## Anchor ile Kompozisyon
+
+```
+1. Kullanici TRY yatirir (Anchor SEP-6)
+2. USDC hesabina gelir
+3. USDC'yi DeFindex vault'una yatirir
+4. Vault otomatik yield stratejisi uygular
+5. Kullanici istediginde cekim yapar
+6. USDC -> TRY (Anchor SEP-6 withdraw)
+```
+
+## Kaynaklar
+
+- [DeFindex Docs](https://docs.defindex.io)
+- [DeFindex Quickstart](https://docs.defindex.io/quickstart)
+- [API Reference](https://docs.defindex.io/api)
+- [Discord](https://discord.gg/defindex)
+- Stellar Skill: `skills/defindex-sdk/SKILL.md`

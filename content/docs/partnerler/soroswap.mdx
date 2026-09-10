@@ -1,0 +1,76 @@
+---
+title: Soroswap
+description: Soroban + classic likidite aggregator - Soroswap entegrasyon rehberi
+---
+
+# Soroswap
+
+**Soroswap**, Stellar üzerinde **likidite aggregator** olarak çalışır. Soroban ve classic likidite havuzlarını birleştirerek en iyi swap fiyatını bulur.
+
+## Ne Yapar?
+
+- Birden fazla likidite kaynağından en iyi fiyatı bulur
+- Soroban smart contract'ları + klasik Stellar DEX birleştirmesi
+- Routing API ile basit swap entegrasyonu
+
+## Hızlı Başlangıç
+
+### API ile Swap
+
+```js
+// Soroswap API'den en iyi rota al
+const routeResponse = await fetch(
+  'https://api.soroswap.finance/optimal-route?' +
+    new URLSearchParams({
+      amount: '1000000000', // 100 USDC (7 decimals)
+      tokenIn: 'USDC_CONTRACT_ID',
+      tokenOut: 'XLM_CONTRACT_ID',
+      network: 'testnet',
+    })
+);
+
+const route = await routeResponse.json();
+console.log('En iyi fiyat:', route.amountOut);
+console.log('Rota:', route.path);
+```
+
+### Contract ile Swap
+
+```js
+// Soroswap router contract'i uzerinden swap
+const routerContract = new Contract('SOROSWAP_ROUTER_CONTRACT_ID');
+
+const tx = new TransactionBuilder(account, {
+  fee: '100',
+  networkPassphrase: Networks.TESTNET,
+})
+  .addOperation(
+    routerContract.call(
+      'swap_exact_tokens_for_tokens',
+      amountIn,      // Gondermek istedigin miktar
+      amountOutMin,  // Minimum kabul ettigin cikis
+      path,          // Token yolu
+      userAddress,   // Alici
+      deadline       // Islem son tarihi
+    )
+  )
+  .setTimeout(30)
+  .build();
+```
+
+## Anchor ile Kompozisyon
+
+```
+1. Kullanici TRY yatirir (Anchor SEP-6)
+2. USDC hesabina gelir
+3. USDC'yi Soroswap'ta baska token'a swap eder
+4. Veya likidite havuzuna ekler (LP token alir)
+5. Cekildiginde Anchor ile TRY'ye cevrilir
+```
+
+## Kaynaklar
+
+- [Soroswap Docs](https://docs.soroswap.finance)
+- [API Reference](https://api.soroswap.finance/docs)
+- [Discord](https://discord.gg/soroswap)
+- Stellar Skill: `skills/soroswap-sdk/SKILL.md`
