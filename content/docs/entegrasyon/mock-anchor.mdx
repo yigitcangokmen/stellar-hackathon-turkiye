@@ -1,0 +1,79 @@
+---
+title: Mock Anchor
+description: Mock Anchor nedir, ne simüle eder, nasıl kullanılır
+---
+
+# Mock Anchor
+
+Mock Anchor, hackathon katılımcıları için hazırlanan **testnet ortamında çalışan sahte bir TRY anchor'ıdır.** Gerçek bir anchor'ın tüm SEP akışlarını simüle eder  - gerçek para, gerçek banka veya gerçek KYC olmadan.
+
+## Temel Bilgiler
+
+| | Değer |
+|---|---|
+| **Home Domain** | [tr-mock-anchor.fly.dev](https://tr-mock-anchor.fly.dev) |
+| **Asset** | USDC |
+| **Ağ** | Stellar Testnet |
+| **SEP'ler** | SEP-1, SEP-6, SEP-10, SEP-12, SEP-38 |
+| **Deposit Tavanı** | 3000 TRY / işlem |
+| **KYC** | Otomatik onay (simüle) |
+
+## Neden Mock?
+
+Gerçek bir anchor'a bağlanmak için lisans, banka entegrasyonu ve KYC altyapısı gerekir. Mock Anchor bunların hepsini simüle eder  - sen sadece **kodu yazarsın**.
+
+Mock Anchor tamamen **testnet** ortamındadır. Mainnet'te çalışmaz, gerçek parayla işlemi yoktur.
+
+## Nasıl Çalışır?
+
+Mock Anchor standart SEP yolunu izler:
+
+```
+1. stellar.toml'u oku     -> Endpoint'leri öğren
+2. SEP-10 auth             -> JWT token al
+3. SEP-12 KYC              -> Kimlik doğrula (otomatik)
+4. SEP-38 quote            -> TRY/USDC kuru al
+5. SEP-6 deposit/withdraw  -> İşlem başlat
+```
+
+Her adım bir sonraki sayfada detaylı anlatılıyor.
+
+## Sitedeki Sayfalar
+
+Mock Anchor'ın web sitesinde şu sayfalar var:
+
+- **Home:** Genel bakış
+- **SEP Path:** Tüm SEP adımlarını gösteren interaktif akış
+- **SEP Demo:** Anchor'ın nasıl çalıştığını deneyebileceğin dry run
+- **Guide:** Anchor kavramı ve rehber
+- **Hakkında:** Genel bilgiler
+
+> Site **%100 AI erişilebilir**  - "Copy for AI" butonu ile tüm API referansını AI'a verebilirsin.
+
+## Başlangıç
+
+Entegrasyon için gereken tek iki değer:
+
+```
+Home Domain: tr-mock-anchor.fly.dev
+Asset: USDC
+```
+
+Geri kalan her şey (auth endpoint, transfer server, issuer hesabı) `stellar.toml`'dan otomatik keşfedilir.
+
+## Nasıl Denersiniz?
+
+Kod yazmadan önce Mock Anchor'ı denemek için:
+
+- **Tarayıcıda canlı, adım adım:** [tr-mock-anchor.fly.dev/explorer](https://tr-mock-anchor.fly.dev/explorer) - API key yok, cüzdan uygulaması gerekmez
+- **Kendi cüzdanınızla:** [demo-wallet.stellar.org](https://demo-wallet.stellar.org) açın, home domain olarak `tr-mock-anchor.fly.dev` girin
+- **Örnek cüzdan (kaynak kod + canlı):** [kaankacar.github.io/tr-mock-wallet](https://kaankacar.github.io/tr-mock-wallet/)
+- **Rehber (buradan başlayın):** [tr-mock-anchor.fly.dev/sep](https://tr-mock-anchor.fly.dev/sep)
+
+## Sonraki Adım
+
+İlk adım: stellar.toml'u okumak.
+
+<Cards>
+  <Card title="SEP-1: Stellar TOML" href="/docs/entegrasyon/sep-1" />
+</Cards>
