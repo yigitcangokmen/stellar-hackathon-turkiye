@@ -1,0 +1,226 @@
+---
+title: "SEP-6: Deposit & Withdraw"
+description: Para yatirma ve cekme islemleri - anchor entegrasyonunun kalbi
+---
+
+# SEP-6: Deposit & Withdrawal
+
+SEP-6, anchor entegrasyonunun **kalbidir**. Kullanıcıların fiat para yatırması (deposit) ve çekmesi (withdraw) için kullanılır.
+
+## Endpoint'ler
+
+```
+Info:        GET  https://tr-mock-anchor.fly.dev/sep6/info
+Deposit:     GET  https://tr-mock-anchor.fly.dev/sep6/deposit
+Withdraw:    GET  https://tr-mock-anchor.fly.dev/sep6/withdraw
+Transaction: GET  https://tr-mock-anchor.fly.dev/sep6/transaction
+Transactions:GET  https://tr-mock-anchor.fly.dev/sep6/transactions
+Simulate:    POST https://tr-mock-anchor.fly.dev/sep6/tx/{id}/simulate-bank-transfer
+```
+
+## Limitler
+
+| | Minimum | Maksimum |
+|---|---|---|
+| **Deposit** | 50 TRY | 3,000 TRY |
+| **Withdraw** | 1 USDC | - |
+
+## Info
+
+Öncelikle anchor'ın desteklediği işlemleri öğrenelim:
+
+```js
+const infoRes = await fetch('https://tr-mock-anchor.fly.dev/sep6/info');
+const info = await infoRes.json();
+// Desteklenen asset'ler, fee bilgisi, limitler
+```
+
+## Deposit (TRY -> USDC)
+
+### Akış
+
+```
+1. GET /sep6/deposit ile deposit baslat
+2. Anchor banka bilgileri + referans kodu doner
+3. Banka transferini simule et (mock'a ozel)
+4. Anchor USDC'yi kullanicinin hesabina gonderir
+```
+
+### JavaScript
+
+```js
+// 1. Deposit baslat
+const depositRes = await fetch(
+  'https://tr-mock-anchor.fly.dev/sep6/deposit?' +
+  new URLSearchParams({
+    asset_code: 'USDC',
+    account: publicKey,
+    amount: '1000', // TRY cinsinden
+  }),
+  { headers: { Authorization: `Bearer ${token}` } }
+);
+
+const deposit = await depositRes.json();
+console.log('Islem ID:', deposit.id);
+console.log('Banka talimatlari:', deposit.how);
+console.log('Detay sayfasi:', deposit.more_info_url);
+```
+
+### Python
+
+```python
+import requests
+
+response = requests.get(
+    "https://tr-mock-anchor.fly.dev/sep6/deposit",
+    params={
+        "asset_code": "USDC",
+        "account": public_key,
+        "amount": "1000",
+    },
+    headers={"Authorization": f"Bearer {token}"}
+)
+
+deposit = response.json()
+print("Islem ID:", deposit["id"])
+print("Banka talimatlari:", deposit["how"])
+```
+
+### Banka Transferini Simüle Et
+
+Mock Anchor'da gerçek banka transferi yok. Bunun yerine bir endpoint ile simüle ediyorsun:
+
+```js
+// Sadece Mock Anchor'a ozel! Gercek anchor'da bu endpoint yok.
+await fetch(
+  `https://tr-mock-anchor.fly.dev/sep6/tx/${deposit.id}/simulate-bank-transfer`,
+  {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ amount: '1000' }),
+  }
+);
+```
+
+Alternatif olarak, `deposit.more_info_url` adresindeki sayfada da simüle butonu var.
+
+## Withdraw (USDC -> TRY)
+
+### Akış
+
+```
+1. GET /sep6/withdraw ile withdraw baslat
+2. Anchor hedef Stellar adresi ve memo doner
+3. USDC'yi o adrese + memo ile gonder
+4. Anchor USDC'yi alir, TRY odemesini simule eder
+```
+
+### JavaScript
+
+```js
+// 1. Withdraw baslat
+const withdrawRes = await fetch(
+  'https://tr-mock-anchor.fly.dev/sep6/withdraw?' +
+  new URLSearchParams({
+    asset_code: 'USDC',
+    type: 'bank_account',
+    amount: '50', // USDC cinsinden
+  }),
+  { headers: { Authorization: `Bearer ${token}` } }
+);
+
+const withdraw = await withdrawRes.json();
+console.log('Treasury adresi:', withdraw.account_id);
+console.log('Memo:', withdraw.memo);
+console.log('Memo tipi:', withdraw.memo_type); // "id"
+```
+
+### USDC Gönder (Stellar üzerinden)
+
+Anchor sana bir adres ve memo verir. USDC'yi oraya göndermelisin:
+
+```js
+import {
+  Server,
+  TransactionBuilder,
+  Networks,
+  Operation,
+  Asset,
+  Memo,
+  Keypair,
+} from '@stellar/stellar-sdk';
+
+const server = new Server('https://horizon-testnet.stellar.org');
+const USDC = new Asset(
+  'USDC',
+  'GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5'
+);
+
+const account = await server.loadAccount(publicKey);
+const tx = new TransactionBuilder(account, {
+  fee: '100',
+  networkPassphrase: Networks.TESTNET,
+})
+  .addOperation(
+    Operation.payment({
+      destination: withdraw.account_id,
+      asset: USDC,
+      amount: '50',
+    })
+  )
+  .addMemo(Memo.id(withdraw.memo))
+  .setTimeout(30)
+  .build();
+
+tx.sign(Keypair.fromSecret(secretKey));
+const result = await server.submitTransaction(tx);
+console.log('TX Hash:', result.hash);
+// Anchor USDC'yi alir ve TRY odemesini simule eder
+```
+
+> **Önemli:** Memo'yu doğru tipte (`Memo.id`) ve doğru değerde göndermen gerekiyor. Memo eksik veya yanlış olursa anchor işlemi eşleştiremez.
+
+## İşlem Durumunu Takip Et
+
+```js
+// Tek islem sorgula
+const statusRes = await fetch(
+  `https://tr-mock-anchor.fly.dev/sep6/transaction?id=${deposit.id}`,
+  { headers: { Authorization: `Bearer ${token}` } }
+);
+const status = await statusRes.json();
+console.log('Durum:', status.transaction.status);
+```
+
+### İşlem geçmişi
+
+```js
+const txsRes = await fetch(
+  'https://tr-mock-anchor.fly.dev/sep6/transactions?asset_code=USDC',
+  { headers: { Authorization: `Bearer ${token}` } }
+);
+const txs = await txsRes.json();
+```
+
+## Deposit Durumları
+
+| Durum | Anlamı |
+|---|---|
+| `pending_user_transfer_start` | Banka transferi bekleniyor (simüle et) |
+| `pending_anchor` | Anchor işlemi işliyor |
+| `pending_trust` | USDC trustline yok  - kullanıcı trustline açmalı |
+| `completed` | Tamamlandı, USDC gönderildi |
+| `error` | Hata oluştu |
+
+> `pending_trust` durumunda anchor **claimable balance** oluşturur. Kullanıcı trustline açtıktan sonra USDC'yi claim edebilir.
+
+## Sonraki Adım
+
+Tüm SEP adımlarını öğrendin! Şimdi bunları birleştiren uçtan uca bir örnek görelim.
+
+<Cards>
+  <Card title="Tam Akis" href="/docs/entegrasyon/tam-akis" />
+</Cards>
