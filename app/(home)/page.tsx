@@ -5,22 +5,15 @@ export default function HomePage() {
   return (
     <div className="flex flex-col justify-center items-center text-center flex-1 gap-8 px-4 py-16">
       <div className="max-w-2xl">
-        <Image
-          src="/stellar-tr-logo.png"
-          alt="Stellar Turkiye"
-          width={320}
-          height={80}
-          className="mx-auto mb-6 dark:block hidden"
-          priority
-        />
-        <Image
-          src="/stellar-tr-logo.png"
-          alt="Stellar Turkiye"
-          width={320}
-          height={80}
-          className="mx-auto mb-6 dark:hidden block invert"
-          priority
-        />
+        <div className="mx-auto mb-6 rounded-xl px-8 py-4 dark:bg-transparent bg-zinc-900 inline-block">
+          <Image
+            src="/stellar-tr-logo.png"
+            alt="Stellar Turkiye"
+            width={320}
+            height={80}
+            priority
+          />
+        </div>
         <h1 className="text-4xl font-bold mb-4">
           Stellar Hackathon Türkiye
         </h1>
