@@ -1,0 +1,140 @@
+---
+title: AI Skill Dosyası
+description: SKILL.md nedir, nasıl kullanılır, içinde neler var
+---
+
+# AI Skill Dosyası (SKILL.md)
+
+Projede bir **SKILL.md** dosyası var. Bu dosya, AI kodlama araçlarının (Claude Code, Cursor, vb.) Mock Anchor entegrasyonunu senin için yazabilmesi için hazırlanmış bir rehber.
+
+## Ne İşe Yarar?
+
+SKILL.md'yi AI aracına verdiğinde, araç şu bilgilere sahip oluyor:
+
+- Mock Anchor'ın tüm endpoint'leri ve gerçek URL'leri
+- USDC issuer, treasury adresi, signing key
+- Deposit/withdraw limitler ve format bilgisi
+- Her SEP adımının çalışır kod örnekleri (JavaScript)
+- Yaygın hatalar ve çözümleri
+- `simulate-bank-transfer` gibi mock'a özel endpoint'ler
+
+Yani AI'a "anchor entegre et" dediğinde, doğru endpoint'lere, doğru parametrelerle, doğru sırada istek atan kod üretir.
+
+## Nasıl Kullanılır?
+
+### Claude Code
+
+```bash
+# Projenin kok dizinine SKILL.md'yi koy
+cp SKILL.md skills/anchor-tr/SKILL.md
+
+# Claude Code'a oku de
+# "skills/anchor-tr/SKILL.md dosyasini oku ve Mock Anchor entegrasyonu yap"
+```
+
+Ya da doğrudan:
+
+```bash
+# Claude Code'da
+# "SKILL.md dosyasini oku, sonra deposit akisini uygula"
+```
+
+### Cursor
+
+1. SKILL.md'yi projenin köküne koy
+2. Cursor chat'te `@SKILL.md` ile referans ver
+3. "Bu skill'e göre anchor entegrasyonu yaz" de
+
+### Diğer AI Araçları
+
+Herhangi bir AI kodlama aracında SKILL.md'nin içeriğini context olarak ver. Dosya tamamen self-contained - dışarıdan başka bir bilgiye ihtiyaç yok.
+
+## İçinde Neler Var?
+
+### 1. Mock Anchor Bilgileri
+
+Tüm sabit değerler tek bir blokta:
+
+```
+Home Domain: tr-mock-anchor.fly.dev
+Network: Stellar Testnet
+Asset: USDC
+USDC Issuer: GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5
+Treasury: GCLCZEQZ2THTEDAOFI66LACNPLY4OBKN7VKLEZFMBIHYKYQOW2W7T3Z6
+Signing Key: GDXYO6FJCNXZEWGXD54GT76FGFYLOLSOGSOJLNQ6WGHCGEQPO7NTE73M
+```
+
+### 2. Endpoint Haritası
+
+```
+stellar.toml:  GET  /.well-known/stellar.toml
+SEP-10 Auth:   GET  /auth?account={G...}
+SEP-10 Token:  POST /auth
+SEP-12 KYC:         /sep12  (otomatik onay)
+SEP-38 Quote:       /sep38
+SEP-6 Transfer:     /sep6
+Simulate:      POST /sep6/tx/{id}/simulate-bank-transfer
+Health:        GET  /health
+```
+
+### 3. Entegrasyon Akışı (8 adım)
+
+Her adım çalışır JavaScript koduyla:
+
+1. **stellar.toml keşfet** (SEP-1) - `StellarTomlResolver.resolve()`
+2. **Kimlik doğrula** (SEP-10) - Challenge iste, imzala, JWT token al
+3. **KYC** (SEP-12) - Mock'ta otomatik, işlem gerekmez
+4. **SEP-6 Info** - Desteklenen asset ve limit bilgisi
+5. **Deposit** (TRY -> USDC) - `GET /sep6/deposit` + banka simüle
+6. **Withdraw** (USDC -> TRY) - `GET /sep6/withdraw` + Stellar payment
+7. **SEP-38 Quote** - Kilitli kur alma (opsiyonel)
+8. **İşlem geçmişi** - `GET /sep6/transactions`
+
+### 4. Yardımcı İşlemler
+
+- USDC trustline açma kodu
+- Testnet hesap fonlama (Friendbot)
+
+### 5. Hata Tablosu
+
+7 yaygın hata, sebepleri ve çözümleri.
+
+### 6. Önemli Notlar
+
+- Mock Anchor sadece testnet
+- `simulate-bank-transfer` mock'a özel
+- Secret key güvenliği
+- Claimable balance durumu
+
+## Örnek Kullanım Senaryoları
+
+### "Sıfırdan deposit akışı yaz"
+
+AI'a söyle:
+> "SKILL.md'yi oku. Sonra bir Next.js API route oluştur: kullanıcı TRY miktarı girer, SEP-10 auth yapar, deposit başlatır ve durumu takip eder."
+
+### "Withdraw ekle"
+
+> "SKILL.md'deki withdraw akışına göre, kullanıcının USDC göndermesini ve durumu takip etmesini sağlayan bir fonksiyon yaz."
+
+### "Tam entegrasyon"
+
+> "SKILL.md'yi oku. Tüm SEP akışını (auth, deposit, withdraw, quote) kapsayan bir servis sınıfı yaz."
+
+## Hackathon Submission Notu
+
+Geliştirmede SKILL.md kullandıysan, submission'da belirt:
+
+```
+Kullanılan skill dosyaları:
+- skills/anchor-tr/SKILL.md (Mock Anchor entegrasyon skill'i)
+```
+
+## SKILL.md'yi İndir
+
+Dosya projenin kök dizininde: [`SKILL.md`](https://github.com/yigitcangokmen/stellar-hackathon-turkiye/blob/main/SKILL.md)
+
+<Cards>
+  <Card title="Mock Anchor" href="/docs/entegrasyon/mock-anchor" />
+  <Card title="Tam Akış Örneği" href="/docs/entegrasyon/tam-akis" />
+</Cards>
