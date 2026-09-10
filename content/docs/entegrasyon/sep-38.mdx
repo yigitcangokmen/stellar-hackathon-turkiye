@@ -1,0 +1,114 @@
+---
+title: "SEP-38: Quote (Fiyat Teklifi)"
+description: TRY/USDC döviz kuru alma ve fiyat teklifi isteme
+---
+
+# SEP-38: Anchor RFQ (Request for Quote)
+
+SEP-38, anchor'dan **döviz kuru** almak için kullanılır. "1000 TRY yatırsam kaç USDC alırım?" sorusunun cevabı.
+
+Mock Anchor'da kur, **Reflector oracle'dan** gelen USD/TRY verisi + 50 bps spread ile hesaplanır.
+
+## Endpoint'ler
+
+```
+Info:   GET  https://tr-mock-anchor.fly.dev/sep38/info
+Prices: GET  https://tr-mock-anchor.fly.dev/sep38/prices
+Price:  GET  https://tr-mock-anchor.fly.dev/sep38/price
+Quote:  POST https://tr-mock-anchor.fly.dev/sep38/quote
+```
+
+## Fiyat Bilgisi Al
+
+```js
+const quoteUrl = 'https://tr-mock-anchor.fly.dev/sep38';
+
+// Desteklenen asset bilgisi
+const infoRes = await fetch(`${quoteUrl}/info`, {
+  headers: { Authorization: `Bearer ${token}` },
+});
+const info = await infoRes.json();
+
+// Fiyat sorgula
+const pricesRes = await fetch(
+  `${quoteUrl}/prices?sell_asset=iso4217:TRY&sell_amount=1000`,
+  { headers: { Authorization: `Bearer ${token}` } }
+);
+const prices = await pricesRes.json();
+```
+
+## Kilitli Quote Al (Firm Quote)
+
+Gerçek bir işlem için kilitli fiyat teklifi:
+
+### JavaScript
+
+```js
+// Deposit: 1000 TRY yatirip USDC almak istiyorum
+const quoteRes = await fetch(`${quoteUrl}/quote`, {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    sell_asset: 'iso4217:TRY',
+    buy_asset: 'stellar:USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5',
+    sell_amount: '1000',
+  }),
+});
+
+const quote = await quoteRes.json();
+console.log('Quote ID:', quote.id);
+console.log('Alacagin USDC:', quote.buy_amount);
+console.log('Kur:', quote.price);
+console.log('Gecerlilik:', quote.expires_at);
+```
+
+### Python
+
+```python
+import requests
+
+quote_url = "https://tr-mock-anchor.fly.dev/sep38"
+
+response = requests.post(
+    f"{quote_url}/quote",
+    headers={
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    },
+    json={
+        "sell_asset": "iso4217:TRY",
+        "buy_asset": "stellar:USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+        "sell_amount": "1000"
+    }
+)
+
+quote = response.json()
+print("Quote ID:", quote["id"])
+print("Alacagin USDC:", quote["buy_amount"])
+```
+
+## Asset Formatı
+
+| Format | Örnek | Açıklama |
+|---|---|---|
+| `iso4217:TRY` | Fiat TRY | ISO 4217 para birimi kodu |
+| `stellar:USDC:GBBD47...` | Stellar USDC | `stellar:KOD:ISSUER` |
+
+## Quote Özellikleri
+
+- **`id`**: Quote'un benzersiz ID'si. SEP-6'da `quote_id` olarak kullanabilirsin.
+- **`price`**: Kilitli kur
+- **`sell_amount`**: Satacağın miktar
+- **`buy_amount`**: Alacağın miktar
+- **`expires_at`**: Quote'un geçerlilik süresi
+
+## Sonraki Adım
+
+Kurun var. Şimdi deposit ve withdraw.
+
+<Cards>
+  <Card title="SEP-6: Deposit & Withdraw" href="/docs/entegrasyon/sep-6" />
+</Cards>
