@@ -1,0 +1,9 @@
+{
+  "title": "Pro",
+  "pages": [
+    "wallet-sdk",
+    "smart-contract-kompozisyon",
+    "mainnet-gecis"
+  ],
+  "defaultOpen": true
+}

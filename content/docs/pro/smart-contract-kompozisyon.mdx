@@ -1,0 +1,152 @@
+---
+title: Smart Contract + Anchor
+description: Soroban smart contract'lari ile anchor entegrasyonunu birlestirme
+---
+
+# Smart Contract + Anchor Kompozisyonu
+
+Hackathon'da güçlü bir proje için anchor entegrasyonunu **Soroban smart contract'ları** ile birleştirebilirsin. Bu, "core feature" gereksinimini karşılamanın en etkili yolu.
+
+## Neden Birleştirilir?
+
+Anchor tek başına "para yatır/çek" yapar. Ama jüri **core feature** arıyor - entegrasyon ürünün iş mantığının bir parçası olmalı:
+
+| Senaryo | Anchor | Smart Contract | Birlikte |
+|---|---|---|---|
+| TRY yatır, USDC al | Evet | - | Sadece anchor |
+| USDC ile işlem yap | - | Evet | Sadece contract |
+| TRY yatır, otomatik DeFi'ye koy | Evet | Evet | Kompozisyon |
+
+## Örnek Mimari: TRY -> USDC -> DeFi Vault
+
+```
+Kullanici
+    |
+    | 1. TRY yatirir (Anchor / SEP-6)
+    v
+Mock Anchor
+    |
+    | 2. USDC gonderir (Stellar payment)
+    v
+Kullanicinin Stellar Hesabi
+    |
+    | 3. USDC'yi vault'a yatirir (Soroban contract cagri)
+    v
+DeFi Vault Contract (ornegin DeFindex)
+    |
+    | 4. Getiri kazanir
+    v
+Kullanici withdraw yapar -> TRY olarak cekilir (Anchor)
+```
+
+## Soroban Contract Örneği
+
+Basit bir vault contract'ı:
+
+```rust
+#![no_std]
+use soroban_sdk::{contract, contractimpl, token, Address, Env};
+
+#[contract]
+pub struct Vault;
+
+#[contractimpl]
+impl Vault {
+    /// USDC yatir
+    pub fn deposit(env: Env, user: Address, amount: i128) {
+        user.require_auth();
+
+        let usdc_token = token::Client::new(
+            &env,
+            &env.storage().instance().get(&"usdc_token").unwrap(),
+        );
+
+        // USDC'yi kullanicidan contract'a transfer et
+        usdc_token.transfer(&user, &env.current_contract_address(), &amount);
+
+        // Bakiyeyi kaydet
+        let key = user.clone();
+        let current: i128 = env
+            .storage()
+            .persistent()
+            .get(&key)
+            .unwrap_or(0);
+        env.storage()
+            .persistent()
+            .set(&key, &(current + amount));
+    }
+
+    /// Bakiye sorgula
+    pub fn balance(env: Env, user: Address) -> i128 {
+        env.storage()
+            .persistent()
+            .get(&user)
+            .unwrap_or(0)
+    }
+
+    /// USDC cek
+    pub fn withdraw(env: Env, user: Address, amount: i128) {
+        user.require_auth();
+
+        let current: i128 = env
+            .storage()
+            .persistent()
+            .get(&user)
+            .unwrap_or(0);
+        assert!(current >= amount, "Yetersiz bakiye");
+
+        let usdc_token = token::Client::new(
+            &env,
+            &env.storage().instance().get(&"usdc_token").unwrap(),
+        );
+
+        usdc_token.transfer(
+            &env.current_contract_address(),
+            &user,
+            &amount,
+        );
+
+        env.storage()
+            .persistent()
+            .set(&user, &(current - amount));
+    }
+}
+```
+
+## Frontend Akışı
+
+```js
+// 1. Anchor ile deposit (SEP-6)
+const deposit = await sep6.deposit({
+  authToken,
+  params: { asset_code: 'USDC', account: publicKey, amount: '100' },
+});
+// ... kullanici TRY yatirir, USDC gelir
+
+// 2. USDC gelince smart contract'a yatir
+import { Contract } from '@stellar/stellar-sdk';
+
+const contract = new Contract('C...'); // vault contract ID
+const tx = new TransactionBuilder(account, { fee: '100', networkPassphrase: Networks.TESTNET })
+  .addOperation(
+    contract.call('deposit', publicKey, '100000000') // 100 USDC (7 decimals)
+  )
+  .setTimeout(30)
+  .build();
+```
+
+## Storage TTL Uyarısı
+
+Soroban'da storage'ın bir **TTL (Time To Live)** süresi vardır. Buna dikkat etmezsen contract verilerin "kaybolabilir":
+
+- `instance` storage: Contract'in kendisi ile yaşam süresini paylaşıyor
+- `persistent` storage: Ayrı TTL, uzatılması gerekir
+- `temporary` storage: Otomatik silinir
+
+> **Hackathon ipucu:** `smart-contracts` skill'indeki TTL bölümünü mutlaka oku.
+
+## Sonraki Adım
+
+<Cards>
+  <Card title="SEP ve Gercek Dunya" href="/docs/pro/mainnet-gecis" />
+</Cards>

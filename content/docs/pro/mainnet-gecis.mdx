@@ -1,0 +1,39 @@
+---
+title: SEP Standartları ve Gerçek Dünyaya Geçiş
+description: Mock Anchor ile öğrendiklerin gerçek dünyada nasıl karşılık buluyor
+---
+
+# SEP Standartları ve Gerçek Dünyaya Geçiş
+
+Mock Anchor bir **testnet aracı** - mainnet'te çalışmaz ve gerçek parayla işlemi yoktur. Peki öğrendiklerinin değeri ne?
+
+## SEP'ler Evrensel
+
+Mock Anchor'da öğrendiğin SEP akışları (SEP-1, SEP-6, SEP-10, SEP-12, SEP-38) Stellar ekosistemindeki **standart protokollerdir**. Herhangi bir gerçek anchor da bu standartları kullanır.
+
+Bu demek oluyor ki:
+- SEP akışlarını anlıyor olmak seni **ekosistemde değerli** yapar
+- İlerde bir gerçek anchor ile çalıştığında kavramları zaten biliyorsun
+- Hackathon'da göstereceğin entegrasyon, SEP bilgini kanıtlar
+
+## Mock Anchor ≠ Mainnet
+
+| | Mock Anchor | Gerçek Anchor |
+|---|---|---|
+| **Ağ** | Testnet | Mainnet |
+| **Para** | Simüle TRY, testnet USDC | Gerçek TRY, gerçek USDC |
+| **Banka** | Simüle | Gerçek banka entegrasyonu |
+| **KYC** | Otomatik onay | Gerçek kimlik doğrulama |
+| **Lisans** | Yok | Finansal regülasyon gerektirir |
+| **Domain** | `tr-mock-anchor.fly.dev` | Anchor'a özel |
+
+> Mock Anchor'dan mainnet'e "domain değiştirerek geçiş" diye bir şey yok. Gerçek bir anchor farklı bir servis, farklı altyapı, farklı gereksinimler.
+
+## Hackathon'da Odaklanman Gereken
+
+1. **Testnet'te çalışan bir entegrasyon** - Mock Anchor ile SEP akışlarını doğru uygula
+2. **Temiz kod** - SEP adımlarını doğru sıralamayla, hata yönetimiyle yaz
+3. **UX** - Kullanıcının deposit/withdraw akışını kolayca takip edebildiği bir arayüz
+4. **Core feature** - Anchor entegrasyonunu ürününe anlamlı şekilde bağla
+
+Mainnet deploy hackathon için gerekli değil. Testnet'te çalışan, iyi yazılmış bir entegrasyon yeterli.

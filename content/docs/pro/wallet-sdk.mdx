@@ -1,0 +1,157 @@
+---
+title: Wallet SDK ile Entegrasyon
+description: Stellar Wallet SDK kullanarak anchor entegrasyonunu basitlestirme
+---
+
+# Wallet SDK ile Entegrasyon
+
+Önceki sayfalarda her SEP adımını elle yazdık. Gerçek bir uygulamada **Stellar Wallet SDK** tüm bu adımları sizin için yönetir.
+
+## Stellar Wallet SDK
+
+Wallet SDK, tüm SEP akışlarını tek bir API arkasında toplar:
+
+```bash
+npm install @stellar/typescript-wallet-sdk
+```
+
+## Temel Kullanım
+
+### JavaScript
+
+```js
+import { Wallet, SigningKeypair } from '@stellar/typescript-wallet-sdk';
+
+// Wallet olustur
+const wallet = Wallet.TestNet();
+const anchor = wallet.anchor({
+  homeDomain: 'tr-mock-anchor.fly.dev',
+});
+
+// Keypair
+const keypair = SigningKeypair.fromSecret('S...');
+const authToken = await anchor
+  .sep10()
+  .authenticate({ accountKp: keypair });
+
+console.log('Auth token alindi');
+
+// SEP-6 servisi
+const sep6 = anchor.sep6();
+
+// Deposit baslat
+const deposit = await sep6.deposit({
+  authToken,
+  params: {
+    asset_code: 'USDC',
+    account: keypair.publicKey,
+    amount: '1000',
+  },
+});
+
+console.log('Deposit:', deposit);
+```
+
+## SDK'nin Avantajları
+
+| Elle Yaptığın | SDK ile |
+|---|---|
+| stellar.toml'u fetch et, parse et | `wallet.anchor({ homeDomain })` |
+| Challenge iste, imzala, token al | `anchor.sep10().authenticate()` |
+| KYC endpoint'ini bul, PUT/GET yap | `anchor.sep12()` |
+| Quote URL'ini bul, POST yap | `anchor.sep38()` |
+| Transfer URL'ini bul, POST yap | `anchor.sep6().deposit()` |
+
+## Freighter ile Kullanım
+
+Gerçek bir dApp'te kullanıcının secret key'ini bilmezsin. Freighter cüzdan ile imzalama yapılır:
+
+```js
+import { isConnected, getPublicKey, signTransaction } from '@stellar/freighter-api';
+
+// Freighter bagli mi kontrol et
+const connected = await isConnected();
+if (!connected) {
+  console.log('Freighter kurulu degil');
+  return;
+}
+
+// Public key al
+const publicKey = await getPublicKey();
+console.log('Cuzdan:', publicKey);
+
+// Transaction imzalama (SEP-10 challenge icin)
+// Freighter otomatik olarak kullaniciya onay penceresi gosterir
+const signedXDR = await signTransaction(challengeXDR, {
+  networkPassphrase: 'Test SDF Network ; September 2015',
+});
+```
+
+## Stellar Wallets Kit
+
+Birden fazla cüzdan desteği için **Stellar Wallets Kit** kullan:
+
+```bash
+npm install @creit.tech/stellar-wallets-kit
+```
+
+```js
+import {
+  StellarWalletsKit,
+  WalletNetwork,
+  allowAllModules,
+} from '@creit.tech/stellar-wallets-kit';
+
+const kit = new StellarWalletsKit({
+  network: WalletNetwork.TESTNET,
+  selectedWalletId: 'freighter',
+  modules: allowAllModules(),
+});
+
+// Cuzdan baglama modal'i goster
+await kit.openModal({
+  onWalletSelected: async (option) => {
+    kit.setWallet(option.id);
+    const { address } = await kit.getAddress();
+    console.log('Baglanan cuzdan:', address);
+  },
+});
+```
+
+## Passkey (Smart Wallet) ile Entegrasyon
+
+Passkey tabanlı cüzdanlar, kullanıcıların **biyometrik** (parmak izi, yüz tanıma) ile işlem yapmasını sağlar:
+
+```bash
+npm install passkey-kit
+```
+
+Detaylar için: [Smart Wallet Docs](https://developers.stellar.org/docs/build/apps/smart-wallets)
+
+## Örnek Mimari
+
+```
++------------------+
+|   React/Next.js  |
+|   Frontend       |
++--------+---------+
+         |
+    Stellar Wallets Kit
+    (Freighter/Passkey)
+         |
++--------+---------+
+|  Wallet SDK      |
+|  SEP-10/12/6/38  |
++--------+---------+
+         |
++--------+---------+
+|  Mock Anchor     |
+|  (SEP Server)    |
++------------------+
+```
+
+## Sonraki Adım
+
+<Cards>
+  <Card title="Smart Contract Kompozisyon" href="/docs/pro/smart-contract-kompozisyon" />
+</Cards>
