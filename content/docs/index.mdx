@@ -1,0 +1,57 @@
+---
+title: Stellar Anchor Docs
+description: Rise In x Stellar Pro Hackathon 2026 - Anchor Entegrasyon Rehberi
+---
+
+# Stellar Anchor Docs
+
+Rise In x Stellar Pro Hackathon 2026 (19-20 Eylül, İstanbul) için hazırlanmış Anchor entegrasyon rehberi.
+
+Bu dokümantasyon Stellar ekosistemini ve **özellikle anchor entegrasyonunu** başlangıçtan pro seviyeye kadar anlatır.
+
+## Neden Anchor?
+
+Hackathon'un temel gereksinimi: kullanıcının **gerçek TRY yatırıp kullanılabilir bir bakiye alması** (veya tersi). Bu, bir anchor entegrasyonu demek. Mock Anchor (`tr-mock-anchor.fly.dev`) ile testnet'te güvenle deneyebilirsin.
+
+## Seviyeler
+
+<Cards>
+  <Card
+    title="Başlangıç"
+    description="Stellar nedir, Anchor nedir, SEP standartları, ilk adımlar"
+    href="/docs/baslangic/stellar-nedir"
+  />
+  <Card
+    title="Entegrasyon"
+    description="Mock Anchor ile hands-on: SEP-1, SEP-10, SEP-12, SEP-6, SEP-38"
+    href="/docs/entegrasyon/mock-anchor"
+  />
+  <Card
+    title="Pro"
+    description="Wallet SDK, Smart Contract kompozisyon, gerçek dünyaya geçiş"
+    href="/docs/pro/wallet-sdk"
+  />
+  <Card
+    title="Entegrasyon Partnerleri"
+    description="DeFindex, Soroswap, Blend, Aquarius ve diğer protokoller"
+    href="/docs/partnerler"
+  />
+</Cards>
+
+## Hızlı Başla
+
+Anchor entegrasyonu için gereken **tek iki değer**:
+
+- **Home Domain:** [tr-mock-anchor.fly.dev](https://tr-mock-anchor.fly.dev)
+- **Asset:** USDC
+
+Gerisi (giriş, deposit, withdraw, issuer) [`stellar.toml`](https://tr-mock-anchor.fly.dev/.well-known/stellar.toml)'dan otomatik keşfedilir.
+
+## Mock Anchor Hakkında
+
+- **Ağ:** Stellar Testnet
+- **SEP Standartları:** SEP-1, SEP-6, SEP-10, SEP-12, SEP-38
+- **KYC:** Simüle (kişisel veri istenmez)
+- **İşlem tavanı:** 3000 TRY / işlem
+- **Banka:** Sahte (testnet ortamı)
+- **Stellar tarafı:** Gerçek testnet USDC
