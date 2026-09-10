@@ -1,0 +1,108 @@
+---
+title: SEP Standartları
+description: Stellar Ecosystem Proposals - anchor entegrasyonu için bilmen gereken standartlar
+---
+
+# SEP Standartları
+
+**SEP (Stellar Ecosystem Proposal)**, Stellar ekosistemindeki servislerin birbirleriyle nasıl konuşacağını belirleyen standartlardır. HTTP'nin RFC'leri neyse, Stellar'ın SEP'leri odur.
+
+Anchor entegrasyonu için **6 SEP** bilmen gerekiyor:
+
+## Hackathon'da Kullanacağın SEP'ler
+
+| SEP | İsim | Ne Yapar | Zorunlu mu? |
+|---|---|---|---|
+| **SEP-1** | Stellar TOML | Anchor'ın bilgilerini yayınlar | Evet |
+| **SEP-10** | Web Authentication | Cüzdanla kimlik doğrulama | Evet |
+| **SEP-12** | KYC | Kullanıcı bilgisi toplama | Evet (mock'ta otomatik) |
+| **SEP-6** | Deposit & Withdrawal | Para yatırma/çekme API'si | Evet |
+| **SEP-38** | Anchor RFQ | Döviz kuru / fiyat teklifi | Evet (TRY/USDC) |
+| SEP-24 | Interactive D&W | Tarayıcı tabanlı akış | Mock'ta yok |
+
+## SEP-1: Stellar TOML
+
+Her anchor'ın `/.well-known/stellar.toml` adresinde bir dosyası vardır. Bu dosya anchor hakkında her şeyi söyler:
+
+- Hangi asset'leri destekliyor
+- Auth endpoint'i nerede
+- Transfer server'ı nerede
+- Issuer hesabı ne
+
+```
+https://tr-mock-anchor.fly.dev/.well-known/stellar.toml
+```
+
+> Entegrasyonun ilk adımı **her zaman** bu dosyayı okumaktır.
+
+## SEP-10: Web Authentication
+
+Kullanıcının cüzdan anahtarıyla kimlik doğrulaması. Şifre yok, API key yok - **cüzdanın anahtarın**.
+
+Akış:
+1. Sunucudan challenge transaction iste
+2. Challenge'ı kullanıcının secret key'iyle imzala
+3. İmzalı transaction'ı sunucuya gönder
+4. JWT token al
+
+Bu token, sonraki tüm isteklerde kullanılır.
+
+## SEP-12: KYC (Know Your Customer)
+
+Gerçek anchor'larda kimlik doğrulama gerekir. Mock Anchor'da **simüle** - kişisel veri istenmez, otomatik onaylanır.
+
+## SEP-6: Deposit & Withdrawal
+
+Ana iş yapan SEP. İki yönlü para akışı:
+
+- **Deposit (TRY -> USDC):** Kullanıcı TRY yatırır, Stellar hesabına USDC gelir
+- **Withdraw (USDC -> TRY):** Kullanıcı USDC gönderir, banka hesabına TRY gelir
+
+## SEP-38: Anchor RFQ (Request for Quote)
+
+Döviz kuru almak için. "100 TRY yatırsam kaç USDC alırım?" sorusunun cevabı.
+
+Mock Anchor'da kur **Reflector oracle'dan** USD/TRY verisiyle hesaplanır.
+
+## SEP-24 vs SEP-6
+
+| | SEP-6 | SEP-24 |
+|---|---|---|
+| **Akış** | API-tabanlı | Tarayıcı popup |
+| **Kontrol** | Geliştiricide | Anchor'da |
+| **UX** | Tam özelleştirme | Anchor'ın arayüzü |
+| **Mock Anchor** | Destekleniyor | Desteklenmiyor |
+
+> Mock Anchor **SEP-6** kullanıyor. SEP-24 yok. Entegrasyonunu SEP-6 üzerine kur.
+
+## Büyük Resim
+
+```
+Senin Uygulamanın
+    |
+    |-- 1. GET stellar.toml (SEP-1)
+    |       -> endpoint'leri öğren
+    |
+    |-- 2. GET /auth + POST /auth (SEP-10)
+    |       -> Challenge al, imzala, JWT token al
+    |
+    |-- 3. KYC (SEP-12)
+    |       -> Mock'ta otomatik onay
+    |
+    |-- 4. POST /sep38/quote (SEP-38)
+    |       -> TRY/USDC kuru al
+    |
+    |-- 5. GET /sep6/deposit veya /sep6/withdraw
+    |       -> İşlem başlat (SEP-6)
+    |
+    v
+Mock Anchor işlemi tamamlar
+```
+
+## Sonraki Adım
+
+Artık kavramları biliyorsun. Şimdi elini kirletelim - Freighter cüzdanı kurup testnet'te ilk işlemini yapalım.
+
+<Cards>
+  <Card title="İlk Adımlar" href="/docs/baslangic/ilk-adimlar" />
+</Cards>
