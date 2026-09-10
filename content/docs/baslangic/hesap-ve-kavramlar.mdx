@@ -1,0 +1,97 @@
+---
+title: Hesap ve Kavramlar
+description: Account, trustline, operation, transaction - Stellar'in temel yapitaslari
+---
+
+# Hesap ve Kavramlar
+
+Stellar'da her şey **hesaplar** (accounts) üzerinden döner. Bir hesap oluşturmak, işlem yapmak ve asset'leri yönetmek için bu kavramları bilmen gerekiyor.
+
+## Account (Hesap)
+
+Stellar'da bir hesap, bir **anahtar çifti** (keypair) ile tanımlanır:
+
+- **Public Key (G...):** Hesabın adresi. Başkalarıyla paylaşabilirsin.
+- **Secret Key (S...):** İşlemleri imzalamak için. **Asla paylaşma, commit etme!**
+
+```js
+// JavaScript ile yeni hesap olusturma
+import { Keypair } from '@stellar/stellar-sdk';
+
+const pair = Keypair.random();
+console.log('Public:', pair.publicKey());   // G...
+console.log('Secret:', pair.secret());      // S...
+```
+
+```python
+# Python ile yeni hesap olusturma
+from stellar_sdk import Keypair
+
+pair = Keypair.random()
+print('Public:', pair.public_key)   # G...
+print('Secret:', pair.secret)       # S...
+```
+
+> **Önemli:** Secret key'i `.env` dosyasına koy, git'e commit etme. `.gitignore`'a `.env` eklemeyi unutma.
+
+## Minimum Bakiye (Base Reserve)
+
+Her Stellar hesabında minimum **1 XLM** bulunması gerekir. Her ek kayıt (trustline, offer, vb.) için +0.5 XLM eklenir.
+
+## Trustline
+
+Stellar'da bir asset'i (örneğin USDC) tutabilmek için önce o asset için bir **trustline** açman gerekir. Trustline, "bu asset'i kabul ediyorum" demektir.
+
+```
+Hesabim --[trustline]--> USDC (Circle Issuer)
+```
+
+Bu, Stellar'ın güvenlik modelinin bir parçası: izinsiz kimse sana bilinmeyen token gönderemez.
+
+## Transaction ve Operation
+
+Stellar'da her işlem bir **transaction** içinde yapılır. Bir transaction bir veya birden fazla **operation** içerebilir:
+
+| Operation | Ne yapar |
+|---|---|
+| `createAccount` | Yeni hesap oluşturur |
+| `payment` | Asset transfer eder |
+| `changeTrust` | Trustline açar/kapatır |
+| `manageBuyOffer` | DEX'te alış emri verir |
+| `manageSellOffer` | DEX'te satış emri verir |
+
+Bir transaction'ın hayat döngüsü:
+
+```
+Olustur -> Operation ekle -> Imzala -> Gonder -> Onayla (3-5 sn)
+```
+
+## Memo
+
+Transaction'lara eklenen kısa not. Anchor entegrasyonunda **çok önemli** - deposit/withdraw işlemlerinde memo ile işlem eşleştirilir.
+
+| Memo Tipi | Kullanım |
+|---|---|
+| `MEMO_TEXT` | Metin (max 28 byte) |
+| `MEMO_ID` | Sayı |
+| `MEMO_HASH` | 32 byte hash |
+
+## Horizon ve RPC
+
+Stellar ağına bağlanmanın iki yolu var:
+
+- **Horizon:** REST API, klasik işlemler ve hesap sorguları için
+- **Soroban RPC:** Smart contract çağrıları için
+
+```
+Horizon (testnet): https://horizon-testnet.stellar.org
+Soroban RPC (testnet): https://soroban-testnet.stellar.org
+```
+
+## Sonraki Adım
+
+Bu kavramları anladıysan, şimdi **Anchor**'ın ne olduğunu ve hackathon'daki rolünü öğrenelim.
+
+<Cards>
+  <Card title="Anchor Nedir?" href="/docs/baslangic/anchor-nedir" />
+</Cards>
