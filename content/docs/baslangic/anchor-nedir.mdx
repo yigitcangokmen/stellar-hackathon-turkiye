@@ -1,0 +1,91 @@
+---
+title: Anchor Nedir?
+description: Stellar Anchor kavramı, TRY ve USDC arasındaki köprü, hackathon'daki rolü
+---
+
+# Anchor Nedir?
+
+**Anchor**, Stellar ağında **fiat para ile dijital varlıklar arasında köprü kuran servislerdir.** Bir nevi dijital döviz bürosu gibi düşünebilirsin.
+
+## Gerçek Hayat Örneği
+
+Diyelim ki Türkiye'de yaşayan bir kullanıcı, senin ürününü kullanarak USDC ile işlem yapmak istiyor:
+
+```
+Kullanıcı: "100 TRY yatırmak istiyorum"
+       |
+       v
+   [Anchor (TRY -> USDC)]
+       |
+       v
+Kullanıcının Stellar hesabında 100 TRY değerinde USDC var
+```
+
+Tersi de geçerli:
+
+```
+Kullanıcı: "50 USDC çekmek istiyorum"
+       |
+       v
+   [Anchor (USDC -> TRY)]
+       |
+       v
+Kullanıcının banka hesabına TRY yatır
+```
+
+## Jüri Neden Anchor'a Bakıyor?
+
+Hackathon'da jüri **ekosistem uyumu** kriterinde anchor entegrasyonuna özellikle bakıyor:
+
+> **Anchor / Local Payments:** Ürününde gerçek bir fiat rayı olması projenin gücünü artırır. Bir kullanıcı TRY yatırıp kullanılabilir bakiye alabilmeli (veya tersi).
+
+Stellar ekosisteminin "crypto demo'dan gerçek ürüne" geçiş kriterlerinden biri.
+
+## Mock Anchor
+
+Hackathon için bir **Mock Anchor** hazır: `tr-mock-anchor.fly.dev`
+
+| | Mock Anchor |
+|---|---|
+| **Para** | Simüle TRY, testnet USDC |
+| **Banka** | Simüle |
+| **KYC** | Otomatik onay |
+| **Ağ** | Stellar Testnet |
+| **SEP'ler** | SEP-1, SEP-6, SEP-10, SEP-12, SEP-38 |
+
+> Mock Anchor **testnet** ortamındadır. Gerçek parayla işlemi yoktur. Ama öğrendiğin SEP akışları Stellar ekosisteminin standart protokolleridir.
+
+## Anchor Nasıl Çalışır?
+
+Anchor'lar **SEP (Stellar Ecosystem Proposal)** standartlarına göre çalışır. Bu standartlar, farklı anchor'ların aynı şekilde entegre edilebilmesini sağlar.
+
+Temel akış:
+
+```
+1. Keşfet (SEP-1)     -> stellar.toml'dan bilgileri al
+2. Kimlik doğrula      -> Cüzdanınla giriş yap (SEP-10)
+   (SEP-10)
+3. KYC (SEP-12)        -> Kimlik bilgilerini gönder
+                          (mock'ta otomatik)
+4. Fiyat al (SEP-38)   -> TRY/USDC kuru
+5. İşlem yap (SEP-6)   -> Deposit veya withdraw
+```
+
+## Entegrasyon İçin Gereken Tek Şey
+
+İki değer:
+
+```
+Home Domain: tr-mock-anchor.fly.dev
+Asset: USDC
+```
+
+Gerisini (giriş endpointi, deposit/withdraw adresi, issuer) `stellar.toml`'dan otomatik keşfediyorsun.
+
+## Sonraki Adım
+
+SEP standartlarının detayına bakalım - hangi SEP ne işe yarar?
+
+<Cards>
+  <Card title="SEP Standartları" href="/docs/baslangic/sep-nedir" />
+</Cards>
