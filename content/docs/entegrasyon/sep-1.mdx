@@ -1,0 +1,140 @@
+---
+title: "SEP-1: Stellar TOML"
+description: stellar.toml dosyasini okuyarak anchor'in bilgilerini kesfetme
+---
+
+# SEP-1: Stellar TOML
+
+Her Stellar anchor'ı, `/.well-known/stellar.toml` adresinde kendini tanımlayan bir dosya yayınlar. Bu dosya entegrasyonun **ilk adımı**  - diğer tüm endpoint'leri buradan öğrenirsin.
+
+## stellar.toml'u Oku
+
+```
+GET https://tr-mock-anchor.fly.dev/.well-known/stellar.toml
+```
+
+Mock Anchor'ın gerçek toml değerleri:
+
+| Alan | Değer |
+|---|---|
+| `WEB_AUTH_ENDPOINT` | `https://tr-mock-anchor.fly.dev/auth` |
+| `TRANSFER_SERVER` | `https://tr-mock-anchor.fly.dev/sep6` |
+| `KYC_SERVER` | `https://tr-mock-anchor.fly.dev/sep12` |
+| `ANCHOR_QUOTE_SERVER` | `https://tr-mock-anchor.fly.dev/sep38` |
+| `SIGNING_KEY` | `GDXYO6FJCNXZEWGXD54GT76FGFYLOLSOGSOJLNQ6WGHCGEQPO7NTE73M` |
+| `CURRENCIES[0].code` | `USDC` |
+| `CURRENCIES[0].issuer` | `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5` |
+
+## Kod Örnekleri
+
+### JavaScript
+
+```js
+async function fetchStellarToml(domain) {
+  const url = `https://${domain}/.well-known/stellar.toml`;
+  const response = await fetch(url);
+  const tomlText = await response.text();
+
+  // TOML'u parse et
+  // Not: basit bir parser veya 'toml' npm paketi kullanabilirsin
+  console.log(tomlText);
+  return tomlText;
+}
+
+// Kullanim
+const toml = await fetchStellarToml('tr-mock-anchor.fly.dev');
+```
+
+Veya Stellar SDK'nin yerleşik fonksiyonuyla:
+
+```js
+import { StellarTomlResolver } from '@stellar/stellar-sdk';
+
+const toml = await StellarTomlResolver.resolve('tr-mock-anchor.fly.dev');
+
+console.log('Auth:', toml.WEB_AUTH_ENDPOINT);
+console.log('Transfer:', toml.TRANSFER_SERVER);
+console.log('KYC:', toml.KYC_SERVER);
+console.log('Quote:', toml.ANCHOR_QUOTE_SERVER);
+console.log('Signing Key:', toml.SIGNING_KEY);
+console.log('Currencies:', toml.CURRENCIES);
+```
+
+### Python
+
+```python
+from stellar_sdk import StellarTomlResolver
+
+toml = StellarTomlResolver.resolve("tr-mock-anchor.fly.dev")
+
+print("Auth:", toml.get("WEB_AUTH_ENDPOINT"))
+print("Transfer:", toml.get("TRANSFER_SERVER"))
+print("KYC:", toml.get("KYC_SERVER"))
+print("Quote:", toml.get("ANCHOR_QUOTE_SERVER"))
+print("Signing Key:", toml.get("SIGNING_KEY"))
+print("Currencies:", toml.get("CURRENCIES"))
+```
+
+### Rust
+
+```rust
+use reqwest;
+use std::error::Error;
+
+async fn fetch_stellar_toml(domain: &str) -> Result<String, Box<dyn Error>> {
+    let url = format!("https://{}/.well-known/stellar.toml", domain);
+    let response = reqwest::get(&url).await?;
+    let body = response.text().await?;
+    println!("{}", body);
+    Ok(body)
+}
+
+// Kullanim
+// let toml = fetch_stellar_toml("tr-mock-anchor.fly.dev").await?;
+```
+
+## Önemli Alanlar
+
+### SIGNING_KEY
+
+Anchor'ın SEP-10 challenge'larını imzalamak için kullandığı public key. Auth akışında bu key'i doğrulamak için kullanacaksın.
+
+### CURRENCIES
+
+Desteklenen asset listesi. Her birinde:
+- `code`: Asset kodu (USDC)
+- `issuer`: Issuer hesabı
+- `is_asset_anchored`: Fiat'a sabitli mi
+- `anchor_asset`: Hangi fiat'a sabitli (USD)
+
+### TRANSFER_SERVER
+
+SEP-6 işlemlerini yapacağın base URL. Deposit ve withdraw istekleri buraya gider.
+
+## Doğrulama
+
+Aşağıdaki kontrolü yap  - tüm endpoint'ler dolu mu?
+
+```js
+const toml = await StellarTomlResolver.resolve('tr-mock-anchor.fly.dev');
+
+const required = [
+  'WEB_AUTH_ENDPOINT',
+  'TRANSFER_SERVER',
+  'KYC_SERVER',
+  'ANCHOR_QUOTE_SERVER',
+  'SIGNING_KEY',
+];
+
+for (const field of required) {
+  console.log(`${field}: ${toml[field] ? 'OK' : 'EKSIK!'}`);
+}
+```
+
+## Sonraki Adım
+
+stellar.toml'dan endpoint'leri aldın. Şimdi SEP-10 ile kimlik doğrulama yapacağız.
+
+<Cards>
+  <Card title="SEP-10: Authentication" href="/docs/entegrasyon/sep-10" />
+</Cards>
