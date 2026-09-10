@@ -1,0 +1,62 @@
+---
+title: Stellar Nedir?
+description: Stellar aginin temel yapisi, ne ise yarar, neden hackathon'da kullaniyoruz
+---
+
+# Stellar Nedir?
+
+Stellar, **ödeme ve değer transferi** için tasarlanmış açık kaynaklı bir blockchain ağıdır. 2014'te Jed McCaleb tarafından kurulmuş, Stellar Development Foundation (SDF) tarafından geliştirilmektedir.
+
+## Neden Stellar?
+
+Stellar'ın diğer blockchain'lerden farkı, **finansal altyapı** olmak için tasarlanmış olmasıdır:
+
+- **Hızlı:** İşlemler 3-5 saniyede kesinleşir
+- **Ucuz:** İşlem ücreti ~0.00001 XLM (neredeyse sıfır)
+- **Stablecoin dostu:** USDC gibi stablecoin'ler native olarak desteklenir
+- **Anchor sistemi:** Fiat para (TRY, USD) ile kripto arasında köprü kurar
+- **Soroban:** Akıllı sözleşme platformu (smart contracts)
+
+## Temel Kavramlar
+
+### Ledger (Defter)
+
+Stellar'daki her işlem bir **ledger**'a kaydedilir. Ledger, blockchain'deki "blok" kavramına denk gelir. Her ~5 saniyede yeni bir ledger kapanır.
+
+### XLM (Lumen)
+
+Stellar'ın native token'ı. Her hesapta minimum 1 XLM bulunması gerekir (base reserve). İşlem ücretleri XLM ile ödenir.
+
+### Testnet
+
+Hackathon'da **testnet** kullanacaksınız. Testnet, gerçek para riski olmadan geliştirme ve test yapabileceğiniz ortam. XLM bedava (Friendbot), Mock Anchor da testnet'te çalışıyor.
+
+```
+Network Passphrase: "Test SDF Network ; September 2015"
+```
+
+## Stellar'ın Katmanları
+
+```
++---------------------------+
+|     dApp / Frontend       |  <-- Senin urunun
++---------------------------+
+|     Soroban (Smart        |  <-- Akilli sozlesmeler
+|     Contracts)            |
++---------------------------+
+|     Stellar Classic       |  <-- Odemeler, asset'ler,
+|     (Core Protocol)       |      trustline'lar
++---------------------------+
+|     Anchor / SEP          |  <-- Fiat <-> Kripto koprusu
++---------------------------+
+```
+
+**Hackathon'da bu katmanların hepsini kullanabilirsin.** Anchor katmanı özellikle önemli - ürününe fiat rayı eklemek projenin değerini ciddi artırır.
+
+## Sonraki Adım
+
+Stellar'ın ne olduğunu anladıysan, şimdi hesapların ve işlemlerin nasıl çalıştığını öğrenelim.
+
+<Cards>
+  <Card title="Hesap ve Kavramlar" href="/docs/baslangic/hesap-ve-kavramlar" />
+</Cards>
