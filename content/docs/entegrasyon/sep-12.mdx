@@ -1,0 +1,72 @@
+---
+title: "SEP-12: KYC"
+description: Kullanıcı kimlik doğrulama akışı - Mock Anchor'da otomatik onay
+---
+
+# SEP-12: KYC (Know Your Customer)
+
+SEP-12, anchor'ların kullanıcı kimlik bilgilerini toplamasını sağlayan standarttır. Gerçek anchor'larda isim, adres, kimlik belgesi gibi bilgiler istenir.
+
+**Mock Anchor'da KYC otomatik onaylanır**  - hiçbir işlem yapman gerekmez. Cüzdan ile auth yaptığın anda KYC geçmiş sayılır.
+
+## Mock Anchor'da
+
+KYC tamamen simüle. Ekstra endpoint çağrısı gerekmez. SEP-10 token'ın varsa deposit/withdraw'a geçebilirsin.
+
+## Gerçek Anchor'da Nasıl Olur?
+
+Gerçek bir anchor'da şu akış işler:
+
+```
+1. GET /sep12/customer?account=G...   -> Mevcut KYC durumunu sor
+2. PUT /sep12/customer                -> KYC bilgilerini gönder
+3. GET /sep12/customer?account=G...   -> Durumu tekrar kontrol et
+```
+
+### Örnek (gerçek anchor için)
+
+```js
+const kycUrl = toml.KYC_SERVER; // https://tr-mock-anchor.fly.dev/sep12
+
+// Durum kontrol
+const res = await fetch(
+  `${kycUrl}/customer?account=${publicKey}`,
+  { headers: { Authorization: `Bearer ${token}` } }
+);
+const customer = await res.json();
+// customer.status: "NEEDS_INFO" | "ACCEPTED" | "PROCESSING" | "REJECTED"
+
+// Bilgi gonder (gercek anchor'da gerekir, mock'ta gerekmez)
+if (customer.status === 'NEEDS_INFO') {
+  await fetch(`${kycUrl}/customer`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      account: publicKey,
+      first_name: 'Test',
+      last_name: 'User',
+      email_address: 'test@example.com',
+    }),
+  });
+}
+```
+
+## KYC Durumları
+
+| Durum | Anlamı |
+|---|---|
+| `NEEDS_INFO` | Bilgi eksik, PUT ile gönder |
+| `ACCEPTED` | Onaylandı, devam et |
+| `PROCESSING` | İnceleniyor, bekle |
+| `REJECTED` | Reddedildi |
+
+## Sonraki Adım
+
+Mock'ta KYC otomatik, ek işlem yok. Döviz kuru almaya geç.
+
+<Cards>
+  <Card title="SEP-38: Quote" href="/docs/entegrasyon/sep-38" />
+</Cards>
